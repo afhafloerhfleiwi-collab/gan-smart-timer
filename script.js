@@ -1,202 +1,204 @@
 
-window.addEventListener("DOMContentLoaded", () => {
-    initApp();
-});
+(() => {
 
-/* =========================
-   GLOBAL SAFE STATE
-   ========================= */
+    /* =========================
+       SAFE GLOBAL STATE (NO CONFLICTS)
+       ========================= */
 
-let appState = {
-    times: [],
-    running: false
-};
+    const App = {
+        times: [],
+        running: false,
+        startTime: 0,
+        timerInterval: null
+    };
 
-/* =========================
-   INIT
-   ========================= */
+    /* =========================
+       INIT
+       ========================= */
 
-function initApp() {
-    console.log("🚀 Initializing GAN Timer (stable mode)");
+    window.addEventListener("DOMContentLoaded", () => {
+        console.log("🚀 App starting (crash-proof mode)");
 
-    safeRun(initScramble);
-    safeRun(initCube3D);
+        safeCall(initScramble);
+        safeCall(initCube3D);
 
-    bindUI();
-    loadScramble();
+        bindUI();
+        loadScramble();
 
-    console.log("✅ App ready");
-}
-
-/* =========================
-   SAFE RUNNER
-   ========================= */
-
-function safeRun(fn) {
-    try {
-        if (typeof fn === "function") fn();
-    } catch (e) {
-        console.warn("Module failed:", e);
-    }
-}
-
-/* =========================
-   UI BINDING
-   ========================= */
-
-function bindUI() {
-    const connectBtn = document.getElementById("connectBtn");
-    const resetBtn = document.getElementById("resetBtn");
-    const clearBtn = document.getElementById("clearBtn");
-
-    if (connectBtn) {
-        connectBtn.onclick = () => {
-            if (typeof connectGAN === "function") {
-                connectGAN();
-            } else {
-                alert("Bluetooth not available");
-            }
-        };
-    }
-
-    if (resetBtn) {
-        resetBtn.onclick = resetAll;
-    }
-
-    if (clearBtn) {
-        clearBtn.onclick = clearSession;
-    }
-
-    // Spacebar safety
-    document.addEventListener("keydown", (e) => {
-        if (e.code === "Space") {
-            e.preventDefault();
-            toggleTimer();
-        }
+        console.log("✅ App ready");
     });
-}
 
-/* =========================
-   SCRAMBLE
-   ========================= */
+    /* =========================
+       SAFE CALL WRAPPER
+       ========================= */
 
-function loadScramble() {
-    if (typeof newScramble === "function") {
-        const scr = newScramble();
-
-        const el = document.getElementById("scramble");
-        if (el) el.textContent = scr;
+    function safeCall(fn) {
+        try {
+            if (typeof fn === "function") fn();
+        } catch (e) {
+            console.warn("Module skipped:", e.message);
+        }
     }
-}
 
-/* =========================
-   TIMER (simple safe version)
-   ========================= */
+    /* =========================
+       UI
+       ========================= */
 
-let timerInterval = null;
+    function bindUI() {
+        const connectBtn = document.getElementById("connectBtn");
+        const resetBtn = document.getElementById("resetBtn");
+        const clearBtn = document.getElementById("clearBtn");
 
-function toggleTimer() {
-    const timerEl = document.getElementById("timer");
+        if (connectBtn) {
+            connectBtn.onclick = () => {
+                if (typeof connectGAN === "function") {
+                    connectGAN();
+                } else {
+                    alert("Bluetooth not available");
+                }
+            };
+        }
 
-    if (!appState.running) {
-        appState.running = true;
+        if (resetBtn) {
+            resetBtn.onclick = resetApp;
+        }
 
-        startTime = Date.now();
+        if (clearBtn) {
+            clearBtn.onclick = clearSession;
+        }
 
-        timerInterval = setInterval(() => {
-            const t = ((Date.now() - startTime) / 1000).toFixed(3);
-            if (timerEl) timerEl.textContent = t;
-        }, 10);
+        // Spacebar timer
+        document.addEventListener("keydown", (e) => {
+            if (e.code === "Space") {
+                e.preventDefault();
+                toggleTimer();
+            }
+        });
+    }
 
-    } else {
-        appState.running = false;
+    /* =========================
+       SCRAMBLE
+       ========================= */
 
-        clearInterval(timerInterval);
+    function loadScramble() {
+        try {
+            if (typeof newScramble === "function") {
+                const scr = newScramble();
+                const el = document.getElementById("scramble");
+                if (el) el.textContent = scr;
+            } else {
+                const el = document.getElementById("scramble");
+                if (el) el.textContent = "Scramble not loaded";
+            }
+        } catch (e) {
+            console.warn("Scramble error:", e.message);
+        }
+    }
 
-        const finalTime = ((Date.now() - startTime) / 1000).toFixed(3);
+    /* =========================
+       TIMER
+       ========================= */
 
-        appState.times.push(parseFloat(finalTime));
+    function toggleTimer() {
+        const timerEl = document.getElementById("timer");
 
-        addToSession(finalTime);
+        if (!App.running) {
+
+            App.running = true;
+            App.startTime = Date.now();
+
+            App.timerInterval = setInterval(() => {
+                const t = ((Date.now() - App.startTime) / 1000).toFixed(3);
+                if (timerEl) timerEl.textContent = t;
+            }, 10);
+
+        } else {
+
+            App.running = false;
+            clearInterval(App.timerInterval);
+
+            const final = ((Date.now() - App.startTime) / 1000).toFixed(3);
+
+            App.times.push(parseFloat(final));
+
+            addSession(final);
+            updateStats();
+            loadScramble();
+        }
+    }
+
+    /* =========================
+       SESSION
+       ========================= */
+
+    function addSession(time) {
+        const list = document.getElementById("sessionList");
+        if (!list) return;
+
+        const div = document.createElement("div");
+        div.textContent = time + "s";
+        list.prepend(div);
+    }
+
+    function clearSession() {
+        App.times = [];
+
+        const list = document.getElementById("sessionList");
+        if (list) list.innerHTML = "";
+
         updateStats();
+    }
+
+    /* =========================
+       STATS
+       ========================= */
+
+    function updateStats() {
+        if (App.times.length === 0) return;
+
+        const best = Math.min(...App.times);
+        const current = App.times[App.times.length - 1];
+
+        set("currentTime", current.toFixed(3) + "s");
+        set("bestTime", best.toFixed(3) + "s");
+
+        set("ao5", avg(5));
+        set("ao12", avg(12));
+    }
+
+    function avg(n) {
+        const arr = App.times.slice(-n);
+        if (!arr.length) return "--";
+
+        const a = arr.reduce((x, y) => x + y, 0) / arr.length;
+        return a.toFixed(3) + "s";
+    }
+
+    function set(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+    }
+
+    /* =========================
+       RESET
+       ========================= */
+
+    function resetApp() {
+        App.running = false;
+        clearInterval(App.timerInterval);
+
+        const timer = document.getElementById("timer");
+        if (timer) timer.textContent = "0.000";
 
         loadScramble();
     }
-}
 
-/* =========================
-   SESSION
-   ========================= */
+    /* =========================
+       GLOBAL ERROR SAFETY
+       ========================= */
 
-function addToSession(time) {
-    const list = document.getElementById("sessionList");
-    if (!list) return;
+    window.addEventListener("error", (e) => {
+        console.error("App error:", e.message);
+    });
 
-    const div = document.createElement("div");
-    div.textContent = time + "s";
-    list.prepend(div);
-}
-
-function clearSession() {
-    appState.times = [];
-
-    const list = document.getElementById("sessionList");
-    if (list) list.innerHTML = "";
-
-    updateStats();
-}
-
-/* =========================
-   STATS
-   ========================= */
-
-function updateStats() {
-    if (appState.times.length === 0) return;
-
-    const best = Math.min(...appState.times);
-    const current = appState.times[appState.times.length - 1];
-
-    setText("currentTime", current.toFixed(3) + "s");
-    setText("bestTime", best.toFixed(3) + "s");
-
-    setText("ao5", averageLast(5));
-    setText("ao12", averageLast(12));
-
-    setText("tps", (Math.random() * 5 + 2).toFixed(2));
-}
-
-function averageLast(n) {
-    const arr = appState.times.slice(-n);
-    if (arr.length === 0) return "--";
-
-    const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
-    return avg.toFixed(3) + "s";
-}
-
-function setText(id, value) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value;
-}
-
-/* =========================
-   RESET
-   ========================= */
-
-function resetAll() {
-    appState.running = false;
-
-    clearInterval(timerInterval);
-
-    const timer = document.getElementById("timer");
-    if (timer) timer.textContent = "0.000";
-
-    loadScramble();
-}
-
-/* =========================
-   ERROR SAFETY
-   ========================= */
-
-window.addEventListener("error", (e) => {
-    console.error("Global error:", e.message);
-});
+})();
