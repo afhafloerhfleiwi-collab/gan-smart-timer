@@ -8,7 +8,6 @@
     const App = {
         times: [],
         running: false,
-        startTime: 0,
         timerInterval: null
     };
 
