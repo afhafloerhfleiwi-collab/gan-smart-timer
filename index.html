@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>GAN Smart Timer</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.164.1/examples/js/controls/OrbitControls.js"></script>
+
+</head>
+
+<body>
+
+<div id="app">
+
+<header>
+
+<h1>GAN Smart Timer</h1>
+
+<div id="buttons">
+
+<button id="connectBtn">
+🔵 Connect GAN
+</button>
+
+<button id="resetBtn">
+Reset
+</button>
+
+<button id="clearBtn">
+Clear Session
+</button>
+
+</div>
+
+</header>
+
+<div id="scrambleContainer">
+
+<div id="scramble">
+
+Loading Scramble...
+
+</div>
+
+</div>
+
+<div id="timerContainer">
+
+<div id="inspection">
+
+15
+
+</div>
+
+<div id="timer">
+
+00:00.000
+
+</div>
+
+</div>
+
+<div id="main">
+
+<div id="cubeArea">
+
+<canvas id="cubeCanvas"></canvas>
+
+</div>
+
+<div id="stats">
+
+<h2>Statistics</h2>
+
+<div class="stat">
+
+<span>Current</span>
+
+<span id="currentTime">--</span>
+
+</div>
+
+<div class="stat">
+
+<span>Best</span>
+
+<span id="bestTime">--</span>
+
+</div>
+
+<div class="stat">
+
+<span>Ao5</span>
+
+<span id="ao5">--</span>
+
+</div>
+
+<div class="stat">
+
+<span>Ao12</span>
+
+<span id="ao12">--</span>
+
+</div>
+
+<div class="stat">
+
+<span>TPS</span>
+
+<span id="tps">--</span>
+
+</div>
+
+<div class="stat">
+
+<span>Moves</span>
+
+<span id="moveCount">0</span>
+
+</div>
+
+</div>
+
+</div>
+
+<div id="sessionPanel">
+
+<h2>Session</h2>
+
+<div id="sessionList">
+
+</div>
+
+</div>
+
+</div>
+
+<script src="scramble.js"></script>
+
+<script src="timer.js"></script>
+
+<script src="cube.js"></script>
+
+<script src="cube3d.js"></script>
+
+<script src="ganProtocol.js"></script>
+
+<script src="bluetooth.js"></script>
+
+<script src="script.js"></script>
+
+</body>
+
+</html>
