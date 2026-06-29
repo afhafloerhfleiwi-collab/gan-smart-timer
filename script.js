@@ -1,129 +1,44 @@
+window.addEventListener("DOMContentLoaded", () => {
+    console.log("App starting...");
 
-/* =========================
-   GAN SMART TIMER - MAIN
-   ========================= */
-
-window.addEventListener("load", () => {
-    initApp();
+    initSafe();
 });
 
-/* ===== Init ===== */
+function initSafe() {
+    try {
+        if (typeof initCube3D === "function") initCube3D();
+        if (typeof initScramble === "function") initScramble();
 
-function initApp() {
-    console.log("Initializing GAN Smart Timer...");
+        bindButtons();
 
-    // 1. init scramble
-    initScramble();
-
-    // 2. init 3D cube
-    if (typeof initCube3D === "function") {
-        initCube3D();
+        console.log("App ready.");
+    } catch (e) {
+        console.error("Init error:", e);
     }
-
-    // 3. bind UI
-    bindUI();
-
-    // 4. generate first scramble
-    generateNewScrambleUI();
-
-    console.log("Ready.");
 }
 
-/* ===== UI Bindings ===== */
-
-function bindUI() {
+function bindButtons() {
     const connectBtn = document.getElementById("connectBtn");
     const resetBtn = document.getElementById("resetBtn");
     const clearBtn = document.getElementById("clearBtn");
 
-    // ===== Connect GAN =====
     if (connectBtn) {
-        connectBtn.addEventListener("click", () => {
-            if (typeof connectGAN === "function") {
-                connectGAN();
-            } else {
-                alert("Bluetooth not supported or module missing.");
-            }
-        });
+        connectBtn.onclick = () => {
+            if (window.connectGAN) connectGAN();
+            else alert("Bluetooth not loaded");
+        };
     }
 
-    // ===== Reset =====
     if (resetBtn) {
-        resetBtn.addEventListener("click", () => {
-            resetAll();
-        });
+        resetBtn.onclick = () => {
+            location.reload();
+        };
     }
 
-    // ===== Clear session =====
     if (clearBtn) {
-        clearBtn.addEventListener("click", () => {
-            document.getElementById("sessionList").innerHTML = "";
-            times = [];
-            updateStatsSafe();
-        });
+        clearBtn.onclick = () => {
+            const list = document.getElementById("sessionList");
+            if (list) list.innerHTML = "";
+        };
     }
 }
-
-/* ===== Scramble ===== */
-
-function generateNewScrambleUI() {
-    if (typeof generateScramble === "function") {
-        const scramble = generateScramble();
-        const el = document.getElementById("scramble");
-
-        if (el) el.textContent = scramble;
-
-        // sync cube state
-        if (window.cube) {
-            cube.reset();
-            cube.applyScramble(scramble);
-        }
-
-        return scramble;
-    }
-}
-
-/* ===== Reset ===== */
-
-function resetAll() {
-    console.log("Resetting...");
-
-    if (typeof timerState !== "undefined") {
-        timerState = "idle";
-    }
-
-    if (typeof elapsed !== "undefined") {
-        elapsed = 0;
-    }
-
-    const timerEl = document.getElementById("timer");
-    if (timerEl) timerEl.textContent = "0.000";
-
-    const inspectionEl = document.getElementById("inspection");
-    if (inspectionEl) inspectionEl.textContent = "";
-
-    generateNewScrambleUI();
-
-    console.log("Reset done.");
-}
-
-/* ===== Stats Safe Update ===== */
-
-function updateStatsSafe() {
-    try {
-        if (typeof updateStats === "function") {
-            updateStats();
-        }
-    } catch (e) {
-        console.warn("Stats update failed:", e);
-    }
-}
-
-/* ===== Keyboard Fix Hook ===== */
-
-document.addEventListener("keydown", (e) => {
-    // prevent scroll
-    if (e.code === "Space") {
-        e.preventDefault();
-    }
-});
