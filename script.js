@@ -93,7 +93,6 @@ function loadScramble() {
    TIMER (simple safe version)
    ========================= */
 
-let startTime = 0;
 let timerInterval = null;
 
 function toggleTimer() {
