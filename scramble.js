@@ -1,145 +1,101 @@
-let timerState = "idle"; 
-// idle | inspecting | running
+const MOVES = ["U", "D", "L", "R", "F", "B"];
+const MODIFIERS = ["", "'", "2"];
 
-let startTime = 0;
-let elapsed = 0;
-let timerInterval = null;
+// axis grouping to avoid invalid sequences
+const AXIS = {
+    U: "UD",
+    D: "UD",
+    L: "LR",
+    R: "LR",
+    F: "FB",
+    B: "FB"
+};
 
-let inspectionTime = 15;
-let inspectionInterval = null;
+/* =========================
+   WCA SCRAMBLE GENERATOR
+   ========================= */
 
-let times = [];
-let currentScramble = "";
+function generateScramble(length = 20) {
+    let scramble = [];
+    let lastAxis = null;
+    let lastMove = null;
 
-const timerDisplay = () => document.getElementById("timer");
-const inspectionDisplay = () => document.getElementById("inspection");
-const scrambleDisplay = () => document.getElementById("scramble");
+    while (scramble.length < length) {
+        const move = MOVES[Math.floor(Math.random() * MOVES.length)];
+        const modifier = MODIFIERS[Math.floor(Math.random() * MODIFIERS.length)];
 
-document.addEventListener("keydown", (e) => {
-    if (e.code === "Space") {
-        e.preventDefault();
+        const axis = AXIS[move];
+        const fullMove = move + modifier;
 
-        if (timerState === "idle") {
-            startInspection();
-        } else if (timerState === "running") {
-            stopTimer();
-        }
+        // ❌ prevent same axis twice in a row
+        if (axis === lastAxis) continue;
+
+        // ❌ prevent repeating same face (R R)
+        if (move === lastMove) continue;
+
+        scramble.push(fullMove);
+
+        lastAxis = axis;
+        lastMove = move;
     }
-});
 
-/* ===== Inspection ===== */
-
-function startInspection() {
-    timerState = "inspecting";
-    inspectionTime = 15;
-
-    inspectionDisplay().textContent = inspectionTime;
-
-    inspectionInterval = setInterval(() => {
-        inspectionTime--;
-
-        inspectionDisplay().textContent = inspectionTime;
-
-        if (inspectionTime <= 0) {
-            clearInterval(inspectionInterval);
-            startTimer();
-        }
-
-    }, 1000);
+    return scramble.join(" ");
 }
 
-/* ===== Timer ===== */
+/* =========================
+   OPTIONAL: 2x2 / variation
+   ========================= */
 
-function startTimer() {
-    timerState = "running";
+function generateScramble2x2(length = 9) {
+    const moves = ["U", "R", "F"];
+    let scramble = [];
+    let lastMove = null;
 
-    inspectionDisplay().textContent = "";
+    while (scramble.length < length) {
+        const move = moves[Math.floor(Math.random() * moves.length)];
+        const mod = MODIFIERS[Math.floor(Math.random() * MODIFIERS.length)];
 
-    startTime = Date.now() - elapsed;
+        if (move === lastMove) continue;
 
-    timerInterval = setInterval(() => {
-        elapsed = Date.now() - startTime;
-        updateDisplay(elapsed);
-    }, 10);
-}
-
-function stopTimer() {
-    clearInterval(timerInterval);
-
-    timerState = "idle";
-
-    const finalTime = elapsed;
-
-    times.push(finalTime);
-
-    addToSession(finalTime);
-
-    updateStats();
-
-    generateNewScramble();
-
-    elapsed = 0;
-
-    updateDisplay(0);
-}
-
-/* ===== Display ===== */
-
-function updateDisplay(ms) {
-    let seconds = (ms / 1000).toFixed(3);
-    timerDisplay().textContent = seconds;
-}
-
-/* ===== Session ===== */
-
-function addToSession(time) {
-    const div = document.createElement("div");
-    div.textContent = formatTime(time);
-    document.getElementById("sessionList").prepend(div);
-}
-
-/* ===== Stats ===== */
-
-function updateStats() {
-    document.getElementById("currentTime").textContent =
-        formatTime(times[times.length - 1]);
-
-    document.getElementById("bestTime").textContent =
-        formatTime(Math.min(...times));
-
-    document.getElementById("ao5").textContent =
-        formatTime(averageOf(times.slice(-5)));
-
-    document.getElementById("ao12").textContent =
-        formatTime(averageOf(times.slice(-12)));
-
-    document.getElementById("tps").textContent =
-        calculateTPS();
-}
-
-/* ===== Helpers ===== */
-
-function formatTime(ms) {
-    return (ms / 1000).toFixed(3) + "s";
-}
-
-function averageOf(arr) {
-    if (arr.length === 0) return "--";
-
-    let sum = arr.reduce((a, b) => a + b, 0);
-    return sum / arr.length;
-}
-
-function calculateTPS() {
-    if (times.length === 0) return "--";
-    return (Math.random() * 5 + 2).toFixed(2); // placeholder
-}
-
-/* ===== Scramble Hook ===== */
-
-function generateNewScramble() {
-    if (typeof generateScramble === "function") {
-        currentScramble = generateScramble();
-        scrambleDisplay().textContent = currentScramble;
+        scramble.push(move + mod);
+        lastMove = move;
     }
+
+    return scramble.join(" ");
 }
+
+/* =========================
+   INIT SCRAMBLE DISPLAY
+   ========================= */
+
+function initScramble() {
+    const el = document.getElementById("scramble");
+    if (!el) return;
+
+    const scr = generateScramble(20);
+    el.textContent = scr;
+
+    return scr;
+}
+
+/* =========================
+   UPDATE SCRAMBLE (called after solve)
+   ========================= */
+
+function newScramble() {
+    const scr = generateScramble(20);
+
+    const el = document.getElementById("scramble");
+    if (el) el.textContent = scr;
+
+    return scr;
+}
+
+/* =========================
+   EXPORTS (GLOBAL)
+   ========================= */
+
+window.generateScramble = generateScramble;
+window.generateScramble2x2 = generateScramble2x2;
+window.initScramble = initScramble;
+window.newScramble = newScramble;
